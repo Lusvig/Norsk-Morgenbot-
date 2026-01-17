@@ -146,17 +146,23 @@ def beregn_bevegelige_helligdager(year: int) -> Dict[str, str]:
     }
 
 def hent_helligdager(year: int) -> Dict[str, str]:
-    """Hent alle helligdager for et gitt år"""
-    # Faste helligdager
-    faste_helligdager = {
-        f"{year}-01-01": "Første nyttårsdag",
-        f"{year}-05-01": "Arbeidernes dag",
-        f"{year}-05-17": "Grunnlovsdagen",
-        f"{year}-12-25": "Første juledag",
-        f"{year}-12-26": "Andre juledag"
-    }
+    """Hent alle helligdager for et gitt år fra JSON eller standardliste"""
+    # Last faste helligdager fra JSON
+    holidays_data = load_json("holidays.json")
     
-    # Bevegelige helligdager
+    if holidays_data:
+        faste_helligdager = {f"{year}-{k}": v for k, v in holidays_data.items()}
+    else:
+        # Fallback til standard faste helligdager
+        faste_helligdager = {
+            f"{year}-01-01": "Første nyttårsdag",
+            f"{year}-05-01": "Arbeidernes dag",
+            f"{year}-05-17": "Grunnlovsdagen",
+            f"{year}-12-25": "Første juledag",
+            f"{year}-12-26": "Andre juledag"
+        }
+    
+    # Bevegelige helligdager (beregnes dynamisk)
     bevegelige_helligdager = beregn_bevegelige_helligdager(year)
     
     return { **faste_helligdager, **bevegelige_helligdager}
@@ -196,14 +202,26 @@ def hent_ferier(year: int) -> Dict[str, Tuple[str, str]]:
     }
 
 def hent_store_hendelser(year: int) -> Dict[str, Tuple[str, str]]:
-    """Hent store hendelser for et gitt år"""
-    return {
+    """Hent store hendelser for et gitt år fra JSON eller standardliste"""
+    hendelser = {
         f"{year}-06-21": ("☀️ Sommeren starter!", "Sommersolverv"),
         f"{year}-12-24": (" ", "Jul"),
         f"{year}-12-31": (" ", "Nyttår"),
-        f"{year}-05-10": (" Eurovision 2025", "Super Bowl"),
-        f"{year}-07-04": (" Tour de France starter", "Sykkel")
     }
+    
+    # Last fra events.json hvis den finnes
+    json_events = load_json("events.json")
+    for dato_mnd, (navn, kategori) in json_events.items():
+        hendelser[f"{year}-{dato_mnd}"] = (navn, kategori)
+        
+    # Hvis vi er i 2025, legg til spesifikke 2025-ting hvis de ikke er i JSON
+    if year == 2025:
+        if f"{year}-05-17" not in hendelser: # Eurovision finalen 2025 er faktisk 17. mai
+             pass # Allerede grunnlovsdag
+        if f"{year}-05-10" not in hendelser:
+            hendelser[f"{year}-05-10"] = ("Eurovision Semifinale", "Musikk")
+            
+    return hendelser
 
 # ============================================================================
 # BYER MED KOORDINATER OG KONFIGURERBARE LISTER
@@ -288,7 +306,7 @@ def hent_vaer(by: str) -> Optional[Dict[str, Any]]:
         strompris = "Ikke tilgjengelig"
         try:
             sone = by_data.get("strompris_sone", "NO1")
-            na = datetime.now()
+            na = hent_naverende_dato()
             start = na.replace(hour=0, minute=0, second=0, microsecond=0)
             end = start + timedelta(days=1)
             
@@ -512,9 +530,14 @@ def hent_dagens_navn(dato: datetime) -> str:
     return DAGER[dato.weekday()]
 
 def hent_navnedag(dato: datetime) -> List[str]:
-    """Henter navnedager"""
-    # Simplifisert versjon - kan utvides med full kalender
+    """Henter navnedager fra JSON eller standardliste"""
     month_day = dato.strftime("%m-%d")
+    navnedager_data = load_json("name_days.json")
+    
+    if navnedager_data and month_day in navnedager_data:
+        return navnedager_data[month_day]
+    
+    # Fallback/standard (hvis JSON er tom eller mangler)
     navn = {
         "01-01": ["Nyttårsdag"],
         "02-14": ["Valentine"],
@@ -646,6 +669,15 @@ def hent_vitser() -> List[str]:
         "Hva sa snømåkeren til naboen? 'Jeg skyfler bare innom!' ❄️",
     ])
 
+def hent_fakta() -> List[str]:
+    """Henter morsomme fakta fra JSON eller standardliste"""
+    fakta_data = load_json("fun_facts.json")
+    return fakta_data.get("facts", [
+        "Norge har verdens lengste kystlinje",
+        "Det er over 3000 fjorder i Norge",
+        "Norge produserer mest laks i verden"
+    ])
+
 # ============================================================================
 # AI-GENERERT INNHOLD
 # ============================================================================
@@ -764,6 +796,15 @@ def lag_discord_melding() -> Dict[str, Any]:
                     "inline": False
                 })
         
+        # Navnedager
+        navnedager = hent_navnedag(idag)
+        if navnedager:
+            embed["fields"].append({
+                "name": "🏷️ Navnedag",
+                "value": ", ".join(navnedager),
+                "inline": True
+            })
+        
         # Finn kommende fridager
         for dato_str, info in sorted(fridager.items()):
             if dato_str > dagens_dato_str:
@@ -837,6 +878,15 @@ def lag_discord_melding() -> Dict[str, Any]:
             embed["fields"].append({
                 "name": "💪 Dagens motivasjon",
                 "value": f"*{random.choice(sitater)}*",
+                "inline": False
+            })
+            
+        # Vis morsom fakta
+        fakta = hent_fakta()
+        if fakta:
+            embed["fields"].append({
+                "name": "💡 Visste du at?",
+                "value": random.choice(fakta),
                 "inline": False
             })
         
