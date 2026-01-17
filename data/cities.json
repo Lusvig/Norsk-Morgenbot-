@@ -1,0 +1,47 @@
+{
+  "Moss": {
+    "lat": 59.43,
+    "lon": 10.66,
+    "strompris_sone": "NO1"
+  },
+  "Oslo": {
+    "lat": 59.91,
+    "lon": 10.75,
+    "strompris_sone": "NO1"
+  },
+  "Bergen": {
+    "lat": 60.39,
+    "lon": 5.32,
+    "strompris_sone": "NO5"
+  },
+  "Trondheim": {
+    "lat": 63.43,
+    "lon": 10.39,
+    "strompris_sone": "NO1"
+  },
+  "Stavanger": {
+    "lat": 58.97,
+    "lon": 5.73,
+    "strompris_sone": "NO5"
+  },
+  "Tromsø": {
+    "lat": 69.65,
+    "lon": 18.96,
+    "strompris_sone": "NO4"
+  },
+  "Kristiansand": {
+    "lat": 58.15,
+    "lon": 8.0,
+    "strompris_sone": "NO1"
+  },
+  "Drammen": {
+    "lat": 59.74,
+    "lon": 10.22,
+    "strompris_sone": "NO1"
+  },
+  "Fredrikstad": {
+    "lat": 59.21,
+    "lon": 10.95,
+    "strompris_sone": "NO1"
+  }
+}

@@ -32,6 +32,12 @@ cd morgenbot
 pip install -r requirements.txt
 ```
 
+Eller installer pakken i utviklingsmodus:
+
+```bash
+pip install -e .
+```
+
 ### 4. Opprett Discord Webhook
 
 1. Gå til din Discord-server
@@ -50,16 +56,25 @@ pip install -r requirements.txt
 4. Opprett en ny API-nøkkel
 5. Kopier nøkkelen
 
-### 6. Legg til GitHub Secrets
+### 6. Konfigurer miljøvariabler
 
-Gå til ditt GitHub-depot → Settings → Secrets and variables → Actions → New repository secret
+Kopier eksempel-miljøfilen og rediger den:
 
-Legg til følgende secrets:
+```bash
+cp .env.example .env
+```
+
+Rediger `.env` og fyll inn dine verdier:
+- `DISCORD_WEBHOOK`: Din Discord webhook URL (påkrevd)
+- `GROQ_API_KEY`: Din Groq API-nøkkel for AI-funksjoner (valgfritt)
+- `BY`: Din by (valgfritt, standard er "Moss")
+
+For GitHub Actions, legg til følgende secrets i repository settings:
 
 | Secret navn | Verdi |
 |-------------|-------|
 | `DISCORD_WEBHOOK` | Din Discord webhook URL (hel URL) |
-| `GROQ_API_KEY` | Din Groq API-nøkkel |
+| `GROQ_API_KEY` | Din Groq API-nøkkel (valgfritt) |
 | `BY` | Din by (valgfritt, standard er "Moss") |
 
 Støttede byer: `Moss`, `Oslo`, `Bergen`, `Trondheim`, `Stavanger`, `Tromsø`, `Kristiansand`, `Drammen`, `Fredrikstad`
@@ -78,7 +93,39 @@ For å teste på GitHub Actions:
 2. Velg "Morgenbot" workflow
 3. Klikk "Run workflow" → "Run workflow"
 
+For å teste uten å sende til Discord (test mode):
+
+```bash
+TEST_MODE=true python morgenbot.py
+```
+
 ## ⚙️ Tilpasning
+
+### Legge til egne byer
+
+Rediger `data/cities.json` eller bruk miljøvariabelen `CUSTOM_CITIES`:
+
+```bash
+export CUSTOM_CITIES='{"DinBy": {"lat": 59.91, "lon": 10.75, "strompris_sone": "NO1"}}'
+```
+
+### Tilpasse sitater
+
+Rediger `data/quotes.json` eller bruk miljøvariabelen `CUSTOM_QUOTES`:
+
+```bash
+export CUSTOM_QUOTES='["Ditt eget sitat", "Enda et sitat"]'
+```
+
+### Endre aksjer
+
+Bruk miljøvariabelen `KONFIGURER_AKSJER`:
+
+```bash
+export KONFIGURER_AKSJER="^OSEAX,Oslo Børs;EQNR.OL,Equinor;DNB.OL,DNB"
+```
+
+Format: `SYMBOL,Navn;SYMBOL,Navn`
 
 ### Endre tidspunkt
 
@@ -91,28 +138,25 @@ schedule:
 
 Cron-formatet er: `minutt time dag måned ukedag` (UTC-tid)
 
-### Legge til ny by
-
-Rediger `BY_KOORDINATER` i `morgenbot.py`:
-
-```python
-BY_KOORDINATER = {
-    "DinBy": {"lat": 59.91, "lon": 10.75},
-    # ... andre byer
-}
-```
-
-### Tilpass sitater
-
-Rediger `SITATER`-listen i `morgenbot.py` for å legge til dine egne sitater.
-
 ### Endre farge på Discord-melding
 
 Rediger `color`-verdien i `lag_discord_melding()`-funksjonen (desimal fargekode).
 
-### Endre aksjer
+## 📂 Datafiler
 
-Rediger `aksjer`-listen i `hent_aksjer()`-funksjonen for å endre hvilke aksjer som vises.
+Morgenbot bruker JSON-filer i `data/`-mappen for konfigurasjon:
+
+- `cities.json` - Bykoordinater og strømsone
+- `weather_symbols.json` - Værsymboler for Yr.no API
+- `quotes.json` - Motiverende sitater
+- `jokes.json` - Norske vitser
+- `proverbs.json` - Norske ordtak
+- `holidays.json` - Norske helligdager
+- `name_days.json` - Navnedager
+- `vacations.json` - Skoleferier (kan utvides)
+- `events.json` - Store hendelser (kan utvides)
+
+Alle disse filene kan redigeres direkte for å tilpasse innholdet.
 
 ## 🌆 Støttede byer
 
