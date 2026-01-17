@@ -7,6 +7,7 @@ import re
 import logging
 import time
 from datetime import datetime, timedelta
+from pathlib import Path
 from typing import Dict, List, Tuple, Optional, Any
 from functools import wraps
 from groq import Groq
@@ -19,6 +20,22 @@ os.environ.pop('https_proxy', None)
 
 from dotenv import load_dotenv
 load_dotenv()
+
+# Data mappe
+DATA_DIR = Path(__file__).parent / "data"
+
+def load_json(filename: str) -> Any:
+    """Last JSON-fil fra data-mappen"""
+    filepath = DATA_DIR / filename
+    try:
+        with open(filepath, encoding="utf-8") as f:
+            return json.load(f)
+    except FileNotFoundError:
+        logger.warning(f"Fant ikke datafil: {filename}")
+        return {}
+    except json.JSONDecodeError as e:
+        logger.error(f"Feil ved parsing av {filename}: {e}")
+        return {}
 
 # Konfigurer logging
 logging.basicConfig(
@@ -191,17 +208,8 @@ def hent_store_hendelser(year: int) -> Dict[str, Tuple[str, str]]:
 # ============================================================================
 # BYER MED KOORDINATER OG KONFIGURERBARE LISTER
 # ============================================================================
-BY_KOORDINATER = {
-    "Moss": {"lat": 59.43, "lon": 10.66, "strompris_sone": "NO1"},
-    "Oslo": {"lat": 59.91, "lon": 10.75, "strompris_sone": "NO1"},
-    "Bergen": {"lat": 60.39, "lon": 5.32, "strompris_sone": "NO5"},
-    "Trondheim": {"lat": 63.43, "lon": 10.39, "strompris_sone": "NO1"},
-    "Stavanger": {"lat": 58.97, "lon": 5.73, "strompris_sone": "NO5"},
-    "Tromsø": {"lat": 69.65, "lon": 18.96, "strompris_sone": "NO4"},
-    "Kristiansand": {"lat": 58.15, "lon": 8.0, "strompris_sone": "NO1"},
-    "Drammen": {"lat": 59.74, "lon": 10.22, "strompris_sone": "NO1"},
-    "Fredrikstad": {"lat": 59.21, "lon": 10.95, "strompris_sone": "NO1"},
-}
+# Last bydata fra JSON-fil
+BY_KOORDINATER = load_json("cities.json")
 
 # La brukeren legge til egne byer via environment variabler
 def utvidede_by_koordinater():
@@ -246,27 +254,13 @@ def hent_vaer(by: str) -> Optional[Dict[str, Any]]:
         next_1h = weather_data.get("next_1_hours", {})
         next_1h_details = next_1h.get("details", {})
         symbol_code = next_1h.get("summary", {}).get("symbol_code", "fair_day")
-        
+
         temp = instant.get("air_temperature", 0)
         wind_speed = instant.get("wind_speed", 0)
         precipitation = next_1h_details.get("precipitation_amount", 0)
-        
-        vær_symboler = {
-            "clearsky_day": "☀️", "clearsky_night": " ", "clearsky_polartwilight": " ",
-            "cloudy": "☁️", "fair_day": " ", "fair_night": " ", "fair_polartwilight": " ",
-            "fog": " ", "heavyrain": " ", "heavyrainandthunder": "⛈️", "heavyrainshowers": " ",
-            "heavyrainshowersandthunder": "⛈️", "heavysleet": " ", "heavysleetandthunder": "⛈️",
-            "heavysleetshowers": " ", "heavysleetshowersandthunder": "⛈️", "heavysnow": "❄️",
-            "heavysnowandthunder": "⛈️", "heavysnowshowers": "❄️", "heavysnowshowersandthunder": "⛈️",
-            "lightrain": " ", "lightrainandthunder": "⛈️", "lightrainshowers": " ",
-            "lightrainshowersandthunder": "⛈️", "lightsleet": " ", "lightsleetandthunder": "⛈️",
-            "lightsleetshowers": " ", "lightsnow": "❄️", "lightsnowandthunder": "⛈️",
-            "lightsnowshowers": "❄️", "lightssleetshowersandthunder": "⛈️", "lightssnowshowersandthunder": "⛈️",
-            "partlycloudy_day": "⛅", "partlycloudy_night": " ", "partlycloudy_polartwilight": " ",
-            "rain": " ", "rainandthunder": "⛈️", "rainshowers": " ", "rainshowersandthunder": "⛈️",
-            "sleet": " ", "sleetandthunder": "⛈️", "sleetshowers": " ", "sleetshowersandthunder": "⛈️",
-            "snow": "❄️", "snowandthunder": "⛈️", "snowshowers": "❄️", "snowshowersandthunder": "⛈️"
-        }
+
+        # Last værsymboler fra JSON-fil
+        vær_symboler = load_json("weather_symbols.json")
         
         temperatur_tekst = (
             f"{temp}°C" if temp > 0 else f"{temp}°C"
@@ -645,29 +639,12 @@ def hent_sitater() -> List[str]:
     return sitater
 
 def hent_vitser() -> List[str]:
-    """Henter norske vitser"""
-    return [
+    """Henter norske vitser fra JSON-fil"""
+    jokes_data = load_json("jokes.json")
+    return jokes_data.get("jokes", [
         "Hvorfor går nordmenn alltid i fjellet? Fordi det er så oppoverbakke å bo der! 🏔️",
         "Hva sa snømåkeren til naboen? 'Jeg skyfler bare innom!' ❄️",
-        "Hvorfor er norske biler så trege? Fordi de alltid går i sneglefart gjennom bomstasjonene! 🚗",
-        "Hva kaller du en bjørn uten tenner? En gummy bear! 🐻",
-        "Hvorfor klemte mannen klokken? Fordi tiden flyr! ⏰",
-        "Hva gjør en lat hund? Han bjeffelansen! 🐕",
-        "Hvorfor tok fisken dårlige karakterer? Fordi han var under C-nivået! 🐟",
-        "Hva sa den ene veggen til den andre? Vi møtes i hjørnet! 🏠",
-        "Hvorfor er matematikkboken alltid trist? Den har så mange problemer! 📚",
-        "Hva kaller du en sau uten bein? En sky! ☁️🐑",
-        "Hvorfor lo sjiraffen? Fordi gresset kilte ham under føttene! 🦒",
-        "Hva sa tomatmamma til tomatbarn som sakket akterut? Ketchup! 🍅",
-        "Hvorfor kan ikke sykler stå av seg selv? De er to-hjulet! 🚲",
-        "Hva slags sko bruker spioner? Sneak-ers! 👟",
-        "Hvorfor er havet så vennlig? Det vinker alltid! 🌊",
-        "Hva kaller du en dinosaur som alltid sover? En dino-snore! 🦕",
-        "Hvorfor gikk tomaten rød? Den så salatdressingen! 🥗",
-        "Hva sa null til åtte? 'Fin belte!' 🔢",
-        "Hvorfor kan ikke elefanter bruke datamaskiner? De er redde for musen! 🐘🖱️",
-        "Hva er en vampyrs favorittfrukt? Blodappelsin! 🧛",
-    ]
+    ])
 
 # ============================================================================
 # AI-GENERERT INNHOLD
