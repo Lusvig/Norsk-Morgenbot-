@@ -1,0 +1,28 @@
+name: Morgenbot
+
+on:
+  schedule:
+    - cron: '0 5 * * *'  # 05:00 UTC = 06:00 norsk tid (vintertid)
+  workflow_dispatch:      # For manuell testing
+
+jobs:
+  morgenbot:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Sjekk ut kode
+        uses: actions/checkout@v4
+
+      - name: Sett opp Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Installer avhengigheter
+        run: pip install -r requirements.txt
+
+      - name: Kjør morgenbot
+        run: python morgenbot.py
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          BY: ${{ secrets.BY }}
